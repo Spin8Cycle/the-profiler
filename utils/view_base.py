@@ -13,7 +13,7 @@ class BasicPropLoader:
     A class to load the basic properties of a file for preliminary EDA.
     """
 
-    def __init__(self, df:pd.DataFrame):
+    def __init__(self, df:pd.DataFrame, **kwargs):
         """
         Initialize the BasicPropLoader with the given file (or filepath). 
         If no file is loaded, an existing df should be passed.
@@ -24,6 +24,8 @@ class BasicPropLoader:
             The dataframe to use instead of loading a file.
         """
         self.df = df
+        super().__init__(df=df, **kwargs)
+        
 
     def __getattr__(self, name:str):
         """

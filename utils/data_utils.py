@@ -8,7 +8,10 @@ class DataLoader:
     A class for loading data dynamically.
     """
 
-    def __init__(self, file: Optional[str]=None, file_repo: Optional[str]=None, df: Optional[pd.DataFrame]=None, **kwargs):
+    def __init__(self, file: Optional[str]=None, 
+                 file_repo: Optional[str]=None, 
+                 df: Optional[pd.DataFrame]=None, 
+                 **kwargs):
         """
         Initialize the DataLoader with the given file (or filepath). 
         If no file is loaded, an existing df should be passed.
@@ -29,7 +32,7 @@ class DataLoader:
                 "You cannot pass both 'file' and 'df'. "
                 "Please provide only one of these arguments."
             )
-        if not file and df is None:
+        if file is None and df is None:
             raise ValueError(
                 "You must provide either a 'file' or a 'df'."
             )
@@ -43,6 +46,9 @@ class DataLoader:
             if not file_repo:
                 self.file_repo = os.path.dirname(file)
             self._read_file(**kwargs)
+
+        super().__init__(df=df, **kwargs)
+        
 
     def __getattr__(self, name:str):
         """

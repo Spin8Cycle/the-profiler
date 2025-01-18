@@ -2,17 +2,21 @@ from typing import Optional, Union, List, Dict
 import importlib
 
 import pandas as pd
-from . import view_base
+from . import view_base, view_corr
 
 importlib.reload(view_base)
+importlib.reload(view_corr)
 
-class Viewers(view_base.BasicPropLoader):
-    def __init__(self, df:pd.DataFrame):
-        super().__init__(df)
 
+class Viewers(view_base.BasicPropLoader, 
+              view_corr.CorrelationViewer):
+    
+    def __init__(self, df:pd.DataFrame=None,**kwargs):
+        super().__init__(df=df, **kwargs)
+        
     def __getattr__(self, name:str):
         """
-        Delegate attribute access to the underlying DataFrame if not found on BasicPropLoader.
+        Delegate attribute access to the underlying DataFrame.
 
         Raises
         ------
