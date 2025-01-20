@@ -4,13 +4,13 @@ import importlib
 import pandas as pd
 
 
-from . import (data_utils, theviz, thefuncs, viz_base)
+from . import (data_utils, theviz, thefuncs, viz_base, viz_corr)
 
 importlib.reload(data_utils)
 importlib.reload(thefuncs)
 importlib.reload(theviz)
 importlib.reload(viz_base)
-
+importlib.reload(viz_corr)
 
 
 class TheProfiler(data_utils.DataLoader, 
@@ -32,12 +32,12 @@ class TheProfiler(data_utils.DataLoader,
                 **kwargs
             )
         
-        
-    
     def main_dashboard(self, **kwargs):
         main_db = theviz.MainDB(**kwargs)
         main_db._register_dashboard(self.summary_tables(main=False), 'Summary')
         main_db._register_dashboard(self.value_tables(main=False), 'Value Properties')
+        main_db._register_dashboard(self.corr_tables(main=False), 'Correlations')
+
         return main_db.run()
 
     def summary_tables(self, main: bool=True, **kwargs): #viz_base
@@ -59,6 +59,23 @@ class TheProfiler(data_utils.DataLoader,
         else:
             dashboard = inst
         return dashboard
+    
+    def corr_tables(self, main: bool=True, **kwargs): #viz_corr
+        concat_df = self.continuous_categorical_corr()
+        concon_df = self.continuous_continuous_corr()
+        catcat_df = self.categorical_categorical_corr()
+        mut_inf = self.mutual_information_continuous()
+
+        inst = viz_corr.CorrViz(
+            concat_df, concon_df, catcat_df, mut_inf, **kwargs
+        )
+
+        if main:
+            dashboard = inst.run()
+        else:
+            dashboard = inst
+        return dashboard
+
         
 
 

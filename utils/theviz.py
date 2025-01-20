@@ -3,10 +3,10 @@ import importlib
 import dash
 import dash_bootstrap_components as dbc
 
-from . import viz_base
+from . import viz_base, viz_corr
 
 importlib.reload(viz_base)
-
+importlib.reload(viz_corr)
 
 class MainDB:
     """

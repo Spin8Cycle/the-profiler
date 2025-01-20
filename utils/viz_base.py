@@ -4,7 +4,7 @@ import pandas as pd
 import dash
 import dash_bootstrap_components as dbc
 from dash import html, dash_table, Input, Output
-import dash_ag_grid as dag  # If you're using dash-ag-grid
+import dash_ag_grid as dag
 
 class SummaryTables:
     def __init__(self, summary: Dict, port: int = 8080, jupyter: bool=True, debug: bool=True):
