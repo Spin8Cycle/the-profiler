@@ -2,14 +2,15 @@ from typing import Optional, Union, List, Dict
 import importlib
 
 import pandas as pd
-from . import view_base, view_corr
+from . import view_base, view_corr, viz_corr
 
 importlib.reload(view_base)
-importlib.reload(view_corr)
+importlib.reload(viz_corr)
 
 
-class Viewers(view_base.BasicPropLoader, 
-              view_corr.CorrelationViewer):
+class Viewers(view_base.BasicPropLoader,
+              view_corr.CorrelationViewer
+              ):
     
     def __init__(self, df:pd.DataFrame=None,**kwargs):
         super().__init__(df=df, **kwargs)

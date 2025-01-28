@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from scipy.stats import chi2_contingency, pointbiserialr
+import plotly.graph_objects as go
 import seaborn as sns
 import matplotlib.pyplot as plt
 from typing import List, Dict, Optional, Tuple, Union
@@ -57,12 +58,11 @@ class  CorrelationViewer:
         self._auto_assign_column_types()
         self._validate_columns()
         
-
         # Initialize caches
         self._continuous_continuous_cache = {}
         self._continuous_categorical_cache = None
         self._categorical_categorical_cache = None
-        #super().__init__(**kwargs)
+        self._mutual_information_cache = None
         
     def _validate_columns(self) -> None:
         """
@@ -122,11 +122,13 @@ class  CorrelationViewer:
             self.continuous_cols = list(
                 set(self.columns).difference(set(self.categorical_cols))
             )
+            return
 
         if self.continuous_cols and self.categorical_cols is None:
             self.categorical_cols = list(
                 set(self.columns).difference(set(self.continuous_cols))
             )
+            return
         
         if self.continuous_cols is None and self.categorical_cols is None:
             col_types = CorrelationViewer.infer_column_types(
@@ -134,6 +136,7 @@ class  CorrelationViewer:
             )
             self.continuous_cols = col_types['continuous']
             self.categorical_cols = col_types['categorical']
+            return
 
     def _correlation_ratio(self, categories: pd.Series, values: pd.Series) -> float:
         """
@@ -244,7 +247,7 @@ class  CorrelationViewer:
             return pd.DataFrame()
         
         # Use caching to avoid recomputation
-        if method not in self._continuous_continuous_cache:
+        if method not in self._continuous_continuous_cache.keys():
             self._continuous_continuous_cache[method] = self.df[self.continuous_cols].corr(method=method)
         
         return self._continuous_continuous_cache[method]
@@ -372,6 +375,9 @@ class  CorrelationViewer:
         pd.DataFrame
             A symmetric DataFrame of MI values.
         """
+        if self._mutual_information_cache is not None:
+            return self._mutual_information_cache
+        
         if len(self.continuous_cols) < 2:
             return pd.DataFrame()
 
@@ -390,43 +396,105 @@ class  CorrelationViewer:
                 mi_matrix[j, i] = mi_val
             mi_matrix[i, i] = 1.0
 
-        return pd.DataFrame(mi_matrix, index=cols, columns=cols)
+        mi_df = pd.DataFrame(mi_matrix, index=cols, columns=cols)
+        self._mutual_information_cache = mi_df
+
+        return mi_df
     
-    def plot_continuous_continuous_corr(self, figsize: Tuple[int, int]=(10, 8), cmap: str='coolwarm', annot: bool=True) -> Optional[plt.Axes]:
+    def plot_continuous_continuous_corr(self, method='pearson') -> Optional[go.Figure]:
         """
-        Plot a heatmap for continuous vs continuous correlation (Pearson).
+        Plot a heatmap for continuous vs continuous correlation.
 
         Parameters
         ----------
-        figsize : tuple, optional
-            Figure size for the plot.
-        cmap : str, optional
-            Colormap for the heatmap.
-        annot : bool, optional
-            If True, write the data value in each cell.
+        method : {'pearson', 'spearman', 'kendall'}, default 'pearson'
 
         Returns
         -------
         matplotlib.axes.Axes or None
             Axes object of the heatmap, or None if no continuous columns are available.
         """
-        corr = self.continuous_continuous_corr()
+        corr = self.continuous_continuous_corr(method=method)
         if corr.empty:
             # logger.info("No continuous columns available to plot.")
             return None
-        plt.figure(figsize=figsize)
-        ax = sns.heatmap(corr, cmap=cmap, annot=annot, vmin=-1, vmax=1, square=True, fmt=".2f")
-        plt.title("Continuous vs Continuous Correlation (Pearson)")
-        plt.tight_layout()
-        return ax
+        values = corr.values
+        # Create a heatmap
+        fig = go.Figure(
+            data=go.Heatmap(
+                z=corr.values,
+                x=corr.columns,
+                y=corr.columns,
+                colorscale='rdylgn',
+                zmin=-1,  # Minimum correlation value
+                zmax=1,   # Maximum correlation value
+                colorbar=dict(title='Correlation', tickvals=[-1, 0, 1]),
+                showscale=True,
+                texttemplate='%{text}',
+                text=np.round(values, 2).astype(str)
+            )
+        )
+
+        # Update layout for better appearance
+        fig.update_layout(
+            title=f"Continuous vs Continuous Correlation ({method})",
+            xaxis=dict(title="Variables"),
+            yaxis=dict(title="Variables", autorange="reversed"),  # Reverse y-axis for a proper heatmap look
+            template="simple_white",
+        )
+
+        return fig
+    
+    def plot_mutual_inf(self) -> Optional[go.Figure]:
+        """
+        Plot a heatmap for continuous vs continuous correlation (Pearson).
+
+        Returns
+        -------
+        matplotlib.axes.Axes or None
+            Axes object of the heatmap, or None if no continuous columns are available.
+        """
+        corr = self.mutual_information_continuous()
+        if corr.empty:
+            # logger.info("No continuous columns available to plot.")
+            return None
+        values = corr.values
+
+        min_val = np.min(values)
+        max_val = np.max(values)
+        med_val = np.median(values)
+        # Create a heatmap
+        fig = go.Figure(
+            data=go.Heatmap(
+                z=corr.values,
+                x=corr.columns,
+                y=corr.columns,
+                colorscale='rdylgn',
+                zmin= min_val,  # Minimum correlation value
+                zmax= max_val,   # Maximum correlation value
+                colorbar=dict(title='Mutual Information', tickvals=[np.round(min_val, 2), np.round(med_val, 2), np.round(max_val, 2)]),
+                showscale=True,
+                texttemplate='%{text}',
+                text=np.round(values, 2).astype(str)
+            )
+        )
+
+        # Update layout for better appearance
+        fig.update_layout(
+            title="Mutual Information Heatmap",
+            xaxis=dict(title="Variables"),
+            yaxis=dict(title="Variables", autorange="reversed"),  # Reverse y-axis for a proper heatmap look
+            template="simple_white",
+        )
+
+        return fig
 
     def plot_pairwise_correlations(self, 
                                    df_corr: pd.DataFrame,
                                    category_cols: Tuple[str, ...],
                                    val_col: str, 
-                                   title: str,
-                                   figsize: Tuple[int, int]=(8, 10), 
-                                   sort: bool=True) -> Optional[plt.Axes]:
+                                   sort: bool=True,
+                                   title: str = None) -> Optional[go.Figure]:
         """
         Helper method to plot horizontal bar charts for pairwise correlations.
 
@@ -438,12 +506,10 @@ class  CorrelationViewer:
             Column names in df_corr that represent the feature pair. Must be 1 or 2 columns.
         val_col : str
             The column name of the correlation value in df_corr.
-        title : str
-            Title for the plot.
-        figsize : tuple, optional
-            Size of the figure.
         sort : bool, optional
             If True, sort by the correlation value.
+        title : str, optional
+            The title of the chart.
 
         Returns
         -------
@@ -464,26 +530,26 @@ class  CorrelationViewer:
             raise ValueError("category_cols must be a tuple of length 1 or 2.")
 
         if sort:
-            df_corr = df_corr.sort_values(by=val_col, ascending=False)
+            df_corr = df_corr.sort_values(by=val_col, ascending=True)
 
-        plt.figure(figsize=figsize)
-        ax = sns.barplot(data=df_corr, x=val_col, y='Pair', orient='h')
-        plt.title(title)
-        plt.xlabel("Correlation")
-        plt.ylabel("Feature Pairs")
-        plt.tight_layout()
-        return ax
+        values = np.round(df_corr[val_col], 2)
 
-    def plot_continuous_categorical_corr(self, figsize: Tuple[int, int]=(8,10), sort: bool=True) -> Optional[plt.Axes]:
+        fig = go.Figure()
+        fig.add_trace(
+            go.Bar(
+                x=values, y=df_corr['Pair'], orientation='h', text=values, textposition='outside',
+                marker=dict(color=values, cmin=0, cmax=1, colorscale=[(0, 'gray'), (1, 'green')], showscale=True)
+            )
+        )
+        fig.update_layout(title=f'Pairwise Correlation ({title})',
+                          xaxis_title='Correlation',
+                          yaxis_title='Pair')
+
+        return fig
+
+    def plot_continuous_categorical_corr(self) -> Optional[go.Figure]:
         """
         Plot a horizontal bar chart for continuous vs categorical correlations.
-
-        Parameters
-        ----------
-        figsize : tuple, optional
-            Figure size for the plot.
-        sort : bool, optional
-            If True, sort the bars by correlation in descending order.
 
         Returns
         -------
@@ -495,21 +561,12 @@ class  CorrelationViewer:
             df_corr=df_corr,
             category_cols=('Category', 'Continuous'),
             val_col='Correlation',
-            title='Continuous vs Categorical Correlation',
-            figsize=figsize,
-            sort=sort
+            title='Continuous vs Categorical'
         )
 
-    def plot_categorical_categorical_corr(self, figsize: Tuple[int, int]=(8,10), sort: bool=True) -> Optional[plt.Axes]:
+    def plot_categorical_categorical_corr(self) -> Optional[go.Figure]:
         """
         Plot a horizontal bar chart for categorical vs categorical correlations (Cramer's V).
-
-        Parameters
-        ----------
-        figsize : tuple, optional
-            Figure size for the plot.
-        sort : bool, optional
-            If True, sort the bars by Cramer's V in descending order.
 
         Returns
         -------
@@ -521,7 +578,5 @@ class  CorrelationViewer:
             df_corr=df_corr,
             category_cols=('Category_1', 'Category_2'),
             val_col='CramersV',
-            title='Categorical vs Categorical Correlation (Cramer\'s V)',
-            figsize=figsize,
-            sort=sort
+            title='Categorical vs Categorical (Cramer\'s V)',
         )

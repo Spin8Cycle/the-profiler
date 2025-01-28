@@ -32,6 +32,8 @@ class TheProfiler(data_utils.DataLoader,
                 **kwargs
             )
         
+        self.kwargs = kwargs
+        
     def main_dashboard(self, **kwargs):
         main_db = theviz.MainDB(**kwargs)
         main_db._register_dashboard(self.summary_tables(main=False), 'Summary')
@@ -61,13 +63,12 @@ class TheProfiler(data_utils.DataLoader,
         return dashboard
     
     def corr_tables(self, main: bool=True, **kwargs): #viz_corr
-        concat_df = self.continuous_categorical_corr()
-        concon_df = self.continuous_continuous_corr()
-        catcat_df = self.categorical_categorical_corr()
-        mut_inf = self.mutual_information_continuous()
-
+        
         inst = viz_corr.CorrViz(
-            concat_df, concon_df, catcat_df, mut_inf, **kwargs
+            df = self.df,
+            continuous_cols=self.continuous_cols,
+            categorical_cols=self.categorical_cols,
+            category_threshold=self.category_threshold
         )
 
         if main:
