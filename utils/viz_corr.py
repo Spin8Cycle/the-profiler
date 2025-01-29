@@ -54,54 +54,63 @@ class CorrViz:
     def _layout(self):
         # CONTINUOUS-CATEGORY
         concat = dbc.Container([
-            dbc.Row([
-                dbc.Col([
-                    dbc.Button("Table / Graph View", color="dark", className="border rounded-pill", n_clicks=0, id='concat-button', size='sm')
-                ], align='center')
-            ], justify='center'),
-            html.Br(),
-            dbc.Row(id='concat-display',justify='center')
+            dcc.Loading(children=[
+                dbc.Row([
+                    dbc.Col([
+                        dbc.Button("Table / Graph View", color="dark", className="border rounded-pill", 
+                                n_clicks=0, id='concat-button', size='sm')
+                    ], align='center')
+                ], justify='center'),
+                html.Br(),
+                dbc.Row(id='concat-display',justify='center')
+            ], type='dot', color='grey')
         ],  fluid=True)
 
         # CONTINUOUS-CONTINUOUS
         concon = dbc.Container([
-            dbc.Row([
-                dbc.Col([
-                    dbc.Button("Table / Graph View", color="dark", className="border rounded-pill", n_clicks=0, id='concon-button', size='sm')
-                ], align='center'),
-                dbc.Col([
-                    dbc.Select(
-                        id='corr-method-selector', value='pearson', size='sm',
-                        options=[
-                            {'label': 'pearson', 'value':'pearson'},
-                            {'label': 'spearman', 'value':'spearman'},
-                            {'label': 'kendall', 'value':'kendall'},])
-                ], align='center', width='auto')
-            ], justify='center'),
-            html.Br(),
-            dbc.Row(id='concon-display',justify='center')
+            dcc.Loading(children=[
+                dbc.Row([
+                    dbc.Col([
+                        dbc.Button("Table / Graph View", color="dark", className="border rounded-pill", n_clicks=0, id='concon-button', size='sm')
+                    ], align='center'),
+                    dbc.Col([
+                        dbc.Select(
+                            id='corr-method-selector', value='pearson', size='sm',
+                            options=[
+                                {'label': 'pearson', 'value':'pearson'},
+                                {'label': 'spearman', 'value':'spearman'},
+                                {'label': 'kendall', 'value':'kendall'},])
+                    ], align='center', width='auto')
+                ], justify='center'),
+                html.Br(),
+                dbc.Row(id='concon-display',justify='center')
+            ], type='dot', color='grey')
         ],  fluid=True)
 
         # CATEGORY-CATEGORY
         catcat = dbc.Container([
-            dbc.Row([
-                dbc.Col([
-                    dbc.Button("Table / Graph View", color="dark", className="border rounded-pill", n_clicks=0, id='catcat-button', size='sm')
-                ], align='center'),
-            ], justify='center'),
-            html.Br(),
-            dbc.Row(id='catcat-display',justify='center')
+            dcc.Loading(children=[
+                dbc.Row([
+                    dbc.Col([
+                        dbc.Button("Table / Graph View", color="dark", className="border rounded-pill", n_clicks=0, id='catcat-button', size='sm')
+                    ], align='center'),
+                ], justify='center'),
+                html.Br(),
+                dbc.Row(id='catcat-display',justify='center')
+            ], type='dot', color='grey')
         ],  fluid=True)
 
         # MUTUAL INFORMATION
         mui = dbc.Container([
-            dbc.Row([
-                dbc.Col([
-                    dbc.Button("Table / Graph View", color="dark", className="border rounded-pill", n_clicks=0, id='mui-button', size='sm')
-                ], align='center')
-            ], justify='center'),
-            html.Br(),
-            dbc.Row(id='mui-display',justify='center')
+            dcc.Loading(children=[
+                dbc.Row([
+                    dbc.Col([
+                        dbc.Button("Table / Graph View", color="dark", className="border rounded-pill", n_clicks=0, id='mui-button', size='sm')
+                    ], align='center')
+                ], justify='center'),
+                html.Br(),
+                dbc.Row(id='mui-display',justify='center')
+            ], type='dot', color='grey')
         ],  fluid=True)
 
         layout = dbc.Container([
